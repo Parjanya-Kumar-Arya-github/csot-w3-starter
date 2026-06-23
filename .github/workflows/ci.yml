@@ -83,13 +83,14 @@ jobs:
           password: ${{ secrets.DEPLOY_PASSWORD }}
           port: ${{ secrets.DEPLOY_SSH_PORT }}
           envs: GITHUB_TOKEN
+          command_timeout: 30m # <--- ADD THIS to prevent the timeout
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
             
-            # 1. Bring down old containers to release any file locks
+            # 1. Bring down old containers
             docker compose -p ${{ secrets.COMPOSE_PROJECT_NAME }} down || true
             
-            # 2. The Sandbox Bypass: Use -T to disable TTY so 'run' works in CI!
+            # 2. Cleanup (Removed the -p flag to prevent the network collision error)
             cat << 'EOF' > /tmp/cleanup.yaml
             services:
               cleaner:
@@ -98,12 +99,10 @@ jobs:
                   - .:/workspace
             EOF
             
-            # Run as root inside the container to blast away the stubborn directories.
-            # The -T flag prevents the CI crash. [!.]* targets hidden files safely.
-            docker compose -p ${{ secrets.COMPOSE_PROJECT_NAME }} -f /tmp/cleanup.yaml run -T --rm cleaner sh -c "rm -rf /workspace/* /workspace/.[!.]*" || true
+            docker compose -f /tmp/cleanup.yaml run -T --rm cleaner sh -c "rm -rf /workspace/* /workspace/.[!.]*" || true
             
             # 3. Download and extract fresh code
             curl -sL -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/${{ github.repository }}/tarball/${{ github.sha }} | tar -xz --strip-components=1
             
-            # 4. Build and launch your application!
+            # 4. Build and launch
             docker compose -p ${{ secrets.COMPOSE_PROJECT_NAME }} up --build -d

@@ -1,8 +1,10 @@
 services:
   api:
-    build: .
+    # 1. REMOVE 'build: .'
+    # 2. ADD the image you built and pushed to GitHub Container Registry
+    image: ghcr.io/parjanya-kumar-arya-github/csot-w3-starter:latest
     volumes:
-      - sqlite_data:/app/instance  # Adjust the path to where your SQLite DB is stored
+      - sqlite_data:/app/instance  # Keeps your SQLite DB safe between deployments
     restart: always
 
   web:
@@ -10,7 +12,9 @@ services:
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     ports:
-      - "0:80"
+      # CHANGED: "0:80" assigns a random port on the server. 
+      # Changed to "80:80" so it consistently maps to standard HTTP.
+      - "80:80" 
     depends_on:
       - api
     restart: always
