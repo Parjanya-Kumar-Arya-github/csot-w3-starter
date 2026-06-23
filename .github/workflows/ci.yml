@@ -89,7 +89,7 @@ jobs:
             # 1. Bring down old containers to release any file locks
             docker compose -p ${{ secrets.COMPOSE_PROJECT_NAME }} down || true
             
-            # 2. The Permission Fix: Use 'up' (CI-safe) to grant 777 permissions to the folder
+            # 2. The Permission Fix: Run detached (-d) to prevent hanging, then wait 5s
             cat << 'EOF' > /tmp/cleanup.yaml
             services:
               cleaner:
@@ -99,7 +99,8 @@ jobs:
                 command: sh -c "chmod -R 777 /workspace"
             EOF
             
-            docker compose -p ${{ secrets.COMPOSE_PROJECT_NAME }} -f /tmp/cleanup.yaml up cleaner || true
+            docker compose -p ${{ secrets.COMPOSE_PROJECT_NAME }} -f /tmp/cleanup.yaml up -d cleaner || true
+            sleep 5
             
             # 3. Safely and completely empty the directory natively (including hidden files)
             find . -mindepth 1 -delete || true
