@@ -27,8 +27,6 @@ jobs:
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          base: ${{ github.event.repository.default_branch }}
-          head: HEAD
           extra_args: --only-verified
 
       - name: Dependency Scan (pip-audit)
@@ -88,5 +86,5 @@ jobs:
             # Pull the latest changes from the repository
             git pull origin main
             
-            # Rebuild and restart the containers detached
-            docker compose up --build -d
+            # Rebuild and restart the containers detached with the correct project name
+            docker compose -p ${{ secrets.COMPOSE_PROJECT_NAME }} up --build -d
