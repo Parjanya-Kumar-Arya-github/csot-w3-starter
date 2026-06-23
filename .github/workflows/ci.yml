@@ -73,6 +73,18 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy files to server via SCP
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          password: ${{ secrets.DEPLOY_PASSWORD }}
+          port: ${{ secrets.DEPLOY_SSH_PORT }}
+          source: "."
+          target: ${{ secrets.DEPLOY_PATH }}
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -82,9 +94,6 @@ jobs:
           port: ${{ secrets.DEPLOY_SSH_PORT }}
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
-            
-            # Pull the latest changes from the repository
-            git pull origin main
             
             # Rebuild and restart the containers detached with the correct project name
             docker compose -p ${{ secrets.COMPOSE_PROJECT_NAME }} up --build -d
