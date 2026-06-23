@@ -1,0 +1,19 @@
+services:
+  api:
+    build: .
+    volumes:
+      - sqlite_data:/app/instance  # Adjust the path to where your SQLite DB is stored
+    restart: always
+
+  web:
+    image: nginx:alpine
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "0:80"
+    depends_on:
+      - api
+    restart: always
+
+volumes:
+  sqlite_data:

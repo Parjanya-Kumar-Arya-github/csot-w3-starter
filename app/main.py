@@ -19,7 +19,10 @@ VERSION_FILE = ROOT / "VERSION"
 
 app = Flask(__name__)
 
-db_url = os.environ.get("DATABASE_URL", f"sqlite:///{ROOT / 'instance' / 'app.db'}")
+INSTANCE_DIR = ROOT / "instance"
+INSTANCE_DIR.mkdir(parents=True, exist_ok=True)
+
+db_url = os.environ.get("DATABASE_URL", f"sqlite:///{INSTANCE_DIR / 'app.db'}")
 app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
