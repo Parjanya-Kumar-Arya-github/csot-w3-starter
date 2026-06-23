@@ -73,27 +73,21 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Copy files to server via SCP
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          password: ${{ secrets.DEPLOY_PASSWORD }}
-          port: ${{ secrets.DEPLOY_SSH_PORT }}
-          source: "."
-          target: ${{ secrets.DEPLOY_PATH }}
-
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           password: ${{ secrets.DEPLOY_PASSWORD }}
           port: ${{ secrets.DEPLOY_SSH_PORT }}
+          envs: GITHUB_TOKEN
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
             
-            # Rebuild and restart the containers detached with the correct project name
+            # Securely download and extract the exact commit directly from GitHub
+            curl -sL -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/${{ github.repository }}/tarball/${{ github.sha }} | tar -xz --strip-components=1
+            
+            # Rebuild and restart the Docker containers
             docker compose -p ${{ secrets.COMPOSE_PROJECT_NAME }} up --build -d
