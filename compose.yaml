@@ -1,21 +1,27 @@
 services:
   api:
-    # 1. REMOVE 'build: .'
-    # 2. ADD the image you built and pushed to GitHub Container Registry
     image: ghcr.io/parjanya-kumar-arya-github/csot-w3-starter:latest
+    networks:
+      - csot-net
     volumes:
-      - sqlite_data:/app/instance  # Keeps your SQLite DB safe between deployments
+      - sqlite_data:/app/instance  
     restart: always
 
   web:
     image: nginx:alpine
+    networks:
+      - csot-net
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     ports:
-      - "0:80"  
+      - "0:8080"  
     depends_on:
       - api
     restart: always
+
+networks:
+  csot-net:
+    driver: bridge
 
 volumes:
   sqlite_data:
