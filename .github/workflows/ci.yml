@@ -69,43 +69,23 @@ jobs:
           tags: ghcr.io/${{ env.REPO }}:latest
 
   deploy:
-    needs: build-and-push
+    needs: build-and-push 
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Execute SSH deployment
+        uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.DEPLOY_HOST }}
+          port: ${{ secrets.DEPLOY_SSH_PORT }}
           username: ${{ secrets.DEPLOY_USER }}
           password: ${{ secrets.DEPLOY_PASSWORD }}
-          port: ${{ secrets.DEPLOY_SSH_PORT }}
-          envs: GITHUB_TOKEN
-          command_timeout: 30m # <--- ADD THIS to prevent the timeout
           script: |
+            # 1. Navigate to your deployment path
             cd ${{ secrets.DEPLOY_PATH }}
             
-            # 1. Bring down old containers to release file locks
-            docker compose -p ${{ secrets.COMPOSE_PROJECT_NAME }} down || true
+            # 2. Download your latest compose.yaml directly from your repo
+            curl -O -L https://raw.githubusercontent.com/${{ github.repository }}/main/compose.yaml
             
-            # 2. Cleanup: Using your ORIGINAL working command (The -p flag is mandatory for your host)
-            cat << 'EOF' > /tmp/cleanup.yaml
-            services:
-              cleaner:
-                image: alpine
-                volumes:
-                  - .:/workspace
-            EOF
-            docker compose -p ${{ secrets.COMPOSE_PROJECT_NAME }} -f /tmp/cleanup.yaml run -T --rm cleaner sh -c "rm -rf /workspace/* /workspace/.[!.]*" || true
-            
-            # 3. Download fresh code (You still need this to get your updated compose.yaml and nginx configs)
-            curl -sL -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/${{ github.repository }}/tarball/${{ github.sha }} | tar -xz --strip-components=1
-            
-            # 4. Log in to GitHub Container Registry (Required to pull your private/public image)
-            echo $GITHUB_TOKEN | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
-            # 5. Pull the pre-built image and launch! (Skipping the --build step that causes timeouts)
-            docker compose -p ${{ secrets.COMPOSE_PROJECT_NAME }} pull
-            docker compose -p ${{ secrets.COMPOSE_PROJECT_NAME }} up -d
+            # 3. Pull the latest Docker image and restart the containers
+            docker compose -p ${{ secrets.COMPOSE_PROJECT_NAME }} up -d --pull always
