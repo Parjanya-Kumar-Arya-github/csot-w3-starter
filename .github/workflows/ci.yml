@@ -81,15 +81,11 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           password: ${{ secrets.DEPLOY_PASSWORD }}
           script: |
-            # 1. Navigate to your deployment path
             cd ${{ secrets.DEPLOY_PATH }}
             
-            # 2. Download your latest compose.yaml
-            curl -O -L https://raw.githubusercontent.com/${{ github.repository }}/main/compose.yaml
+            sudo curl -O -L https://raw.githubusercontent.com/${{ github.repository }}/main/compose.yaml
             
-            # 3. Create the nginx directory and download the default.conf
-            mkdir -p nginx
-            curl -o nginx/default.conf -L https://raw.githubusercontent.com/${{ github.repository }}/main/nginx/default.conf
+            sudo mkdir -p nginx
+            sudo curl -o nginx/default.conf -L https://raw.githubusercontent.com/${{ github.repository }}/main/nginx/default.conf
             
-            # 4. Pull the latest Docker image and restart the containers
-            docker compose -p ${{ secrets.COMPOSE_PROJECT_NAME }} up -d --pull always
+            sudo docker compose -p ${{ secrets.COMPOSE_PROJECT_NAME }} up -d --pull always
