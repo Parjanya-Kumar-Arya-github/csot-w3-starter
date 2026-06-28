@@ -87,10 +87,17 @@ jobs:
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
             
+<<<<<<< HEAD
             # 1. Bring down old containers to release file locks
             docker compose -p ${{ secrets.COMPOSE_PROJECT_NAME }} down || true
             
             # 2. Cleanup: Using your ORIGINAL working command (The -p flag is mandatory for your host)
+=======
+            # 1. Bring down old containers
+            docker compose -p ${{ secrets.COMPOSE_PROJECT_NAME }} down || true
+            
+            # 2. Cleanup (Removed the -p flag to prevent the network collision error)
+>>>>>>> parent of 15fc88d (Update ci.yml)
             cat << 'EOF' > /tmp/cleanup.yaml
             services:
               cleaner:
@@ -98,7 +105,12 @@ jobs:
                 volumes:
                   - .:/workspace
             EOF
+<<<<<<< HEAD
             docker compose -p ${{ secrets.COMPOSE_PROJECT_NAME }} -f /tmp/cleanup.yaml run -T --rm cleaner sh -c "rm -rf /workspace/* /workspace/.[!.]*" || true
+=======
+            
+            docker compose -f /tmp/cleanup.yaml run -T --rm cleaner sh -c "rm -rf /workspace/* /workspace/.[!.]*" || true
+>>>>>>> parent of 15fc88d (Update ci.yml)
             
             # 3. Download fresh code (You still need this to get your updated compose.yaml and nginx configs)
             curl -sL -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/${{ github.repository }}/tarball/${{ github.sha }} | tar -xz --strip-components=1
